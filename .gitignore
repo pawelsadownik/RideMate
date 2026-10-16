@@ -1,0 +1,80 @@
+# RideMate - global .gitignore
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+vs/
+bin/
+obj/
+out/
+
+# .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+[Tt]est[Rr]esult*/
+[Bb]uild[Rr]esult*/
+*.publish.xml
+Publish/
+
+# Node / Expo / React Native
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.expo/
+.web/
+dist/
+build/
+ios/
+android/
+.coverage/
+*.tgz
+
+# Environment
+.env
+.env.local
+.env.*.local
+secrets.json
+appsettings.Development.json
+appsettings.Production.json
+
+# macOS
+__MACOSX/
+
+# Xcode
+*.xcuserstate
+*.xcworkspace
+xcuserdata/
+
+# Android
+.gradle/
+local.properties
+keystore.jks
+*.keystore
+upload-key.*
+
+# Uploaded / generated
+eas.json
+*.ab
+*.aab
+*.apk
+*.ipa
+
+# Temporary
+tmp/
+temp/
+*.tmp

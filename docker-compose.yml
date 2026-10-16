@@ -1,0 +1,45 @@
+# RideMate - lokalne środowisko developerskie
+# Uruchomienie: docker compose up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ridemate-postgres
+    environment:
+      POSTGRES_USER: ridemate
+      POSTGRES_PASSWORD: ridemate
+      POSTGRES_DB: ridemate
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5434:5432"
+    volumes:
+      - ridemate_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ridemate -d ridemate"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ridemate-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=ridemate;Username=ridemate;Password=ridemate
+      Jwt__Key: development-signing-key-32-chars-long
+      Jwt__Issuer: RideMate
+      Jwt__Audience: RideMateApp
+      Jwt__ExpiresInMinutes: 10080
+      AllowedHosts: "*"
+    ports:
+      - "8000:8080"
+    restart: unless-stopped
+
+volumes:
+  ridemate_postgres_data:
