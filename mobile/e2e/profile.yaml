@@ -1,0 +1,19 @@
+# E2E: Profil i ustawienia
+# Wymagania: użytkownik zalogowany
+# Uruchomienie: maestro test mobile/e2e/profile.yaml
+appId: appcity.ridemate
+---
+- launchApp:
+    clearState: false
+- tapOn:
+    text: "Profil"  # dolna nawigacja
+- assertVisible:
+    text: "Mój profil"
+- tapOn:
+    text: "Edytuj profil"
+- inputText:
+    text: "Zmieniony opis testowy"
+- tapOn:
+    text: "Zapisz"
+- assertVisible:
+    text: "Zmieniony opis testowy"

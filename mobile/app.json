@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "RideMate",
+    "slug": "ridemate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/your-project-id"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "appcity.ridemate",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "RideMate potrzebuje lokalizacji, aby pokazać osoby w pobliżu.",
+        "NSCameraUsageDescription": "RideMate potrzebuje dostępu do kamery, aby dodać zdjęcie profilowe.",
+        "NSPhotoLibraryUsageDescription": "RideMate potrzebuje dostępu do galerii, aby wgrać zdjęcia profilowe.",
+        "NSUserTrackingUsageDescription": "RideMate chce korzystać z danych o korzystaniu z aplikacji do personalizacji powiadomień."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "appcity.ridemate",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "VIBRATE"
+      ],
+      "googleServicesFile": "./google-services.json"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#FF5E50",
+          "defaultChannel": "ridemate"
+        }
+      ],
+      "expo-secure-store",
+      "expo-router"
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "apiUrl": "http://192.168.0.169:5050",
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    }
+  }
+}

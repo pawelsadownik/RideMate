@@ -1,0 +1,17 @@
+# E2E: Odkrywanie i swipe (Like / Pass)
+# Wymagania: użytkownik zalogowany, przynajmniej jeden profil w discovery
+# Uruchomienie: maestro test mobile/e2e/discover_swipe.yaml
+appId: appcity.ridemate
+---
+- launchApp:
+    clearState: false
+- assertVisible:
+    text: "Odkrywaj"
+- swipeLeft:
+    description: "Pomiń profil (Pass)"
+- swipeRight:
+    description: "Polub profil (Like)"
+- assertVisible:
+    text: "To jest dopasowanie!"  # jeśli Match
+- tapOn:
+    text: "Kontynuuj przeglądanie"

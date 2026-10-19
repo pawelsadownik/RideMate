@@ -1,0 +1,20 @@
+# E2E: Rejestracja nowego użytkownika
+# Wymagania: backend API uruchomiony (http://10.0.2.2:5050 dla emulatora Androida)
+# Uruchomienie: maestro test mobile/e2e/register.yaml
+# Przed uruchomieniem: zainstaluj aplikację na emulatorze (maestro cloud lub lokalny build)
+appId: appcity.ridemate
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "Zarejestruj"  # przycisk sign up na ekranie logowania
+- inputText:
+    text: "marek.e2e@example.com"
+- tapOn:
+    id: "Hasło"  # pole hasła (approksymacja - użyj inputText po focusie)
+- inputText:
+    text: "Haslo1234!"
+- tapOn:
+    text: "Zarejestruj"
+- assertVisible:
+    text: "Mój profil"  # po rejestracji przenosi na profil / discover

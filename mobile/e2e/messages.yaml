@@ -1,0 +1,19 @@
+# E2E: Czat po dopasowaniu
+# Wymagania: istnieje aktywne dopasowanie z rozmową
+# Uruchomienie: maestro test mobile/e2e/messages.yaml
+appId: appcity.ridemate
+---
+- launchApp:
+    clearState: false
+- tapOn:
+    text: "Czat"  # dolna nawigacja
+- assertVisible:
+    text: "Konwersacje"
+- tapOn:
+    text: "Użytkownik"  # nazwa partnera z dopasowania (przykładowa)
+- inputText:
+    text: "Cześć! Ruszamy na trasę?"
+- tapOn:
+    text: "Wyślij"
+- assertVisible:
+    text: "Cześć! Ruszamy na trasę?"

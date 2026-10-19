@@ -1,0 +1,15 @@
+# E2E: Tryb deweloperski Premium (tylko dev, niedostępny w produkcji)
+# Wymagania: backend w trybie Development, APP__DevMode=true
+# Uruchomienie: maestro test mobile/e2e/premium_dev.yaml
+appId: appcity.ridemate
+---
+- launchApp:
+    clearState: false
+- tapOn:
+    text: "Profil"
+- assertVisible:
+    text: "RideMate Premium"
+- tapOn:
+    text: "Aktywuj Premium"
+- assertVisible:
+    text: "Aktywne"  # dev premium aktywowane bez płatności
