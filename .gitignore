@@ -9,6 +9,7 @@ desktop.ini
 # IDE
 .vscode/
 .idea/
+.vs/
 *.suo
 *.user
 *.userosscache
@@ -20,6 +21,7 @@ out/
 
 # .NET
 *.dll
+backend/src/RideMate.Api/Properties/
 *.exe
 *.pdb
 *.cache
