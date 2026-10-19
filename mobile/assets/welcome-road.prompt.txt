@@ -1,0 +1,2 @@
+Generated with the built-in image_gen tool.
+Prompt: Use case: photorealistic-natural. Portrait background photograph for RideMate mobile welcome screen. A lone adult motorcycle rider wearing a black full-face helmet and protective riding gear, seen from behind, traveling on a winding paved mountain road above a lake at golden sunset. Dramatic alpine mountains, warm coral orange sunlight, charcoal shadows. Rider in lower middle, negative space for UI. Authentic editorial adventure photography. No text, logos or watermark.

@@ -80,3 +80,6 @@ eas.json
 tmp/
 temp/
 *.tmp
+
+# Local host access details
+deploy/ridemate-ssh.config

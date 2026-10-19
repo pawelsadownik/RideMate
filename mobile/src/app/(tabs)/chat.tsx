@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, ActivityIndicator,
+  View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -22,6 +22,7 @@ export default function Chat() {
       return res.data as any[];
     },
     enabled: true,
+    refetchInterval: 5000,
     retry: 1,
   });
 
@@ -51,11 +52,11 @@ export default function Chat() {
           <TouchableOpacity
             style={styles.row}
             onPress={() => router.push({
-              pathname: '/(tabs)/chat/[conversationId]',
+              pathname: '/chat/[conversationId]',
               params: { conversationId: item.id, otherNickname: item.otherNickname },
             })}
           >
-            <View style={[styles.avatar, { backgroundColor: colors.border }]} />
+            <Image source={{uri: item.otherPrimaryPhotoUrl}} style={styles.avatar} />
             <View style={styles.info}>
               <Text style={[styles.name, { color: colors.primary }]}>{item.otherNickname ?? 'Użytkownik'}</Text>
               <Text style={[styles.preview, { color: colors.secondary }]}>{item.lastMessageText ?? ''}</Text>
@@ -64,17 +65,7 @@ export default function Chat() {
           </TouchableOpacity>
         )}
       />
-      <View style={styles.inputRow}>
-        <TextInput
-          style={[styles.input, { color: colors.primary, borderColor: colors.border }]}
-          placeholder={t('chat.messagePlaceholder')}
-          value={text}
-          onChangeText={setText}
-        />
-        <TouchableOpacity style={[styles.sendBtn, { backgroundColor: colors.accent }]} onPress={() => {}}>
-          <Text style={styles.sendText}>{t('common.send')}</Text>
-        </TouchableOpacity>
-      </View>
+
     </SafeAreaView>
   );
 }

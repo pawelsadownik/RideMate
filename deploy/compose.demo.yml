@@ -1,0 +1,52 @@
+name: ridemate-demo
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 256m
+    environment:
+      POSTGRES_DB: ridemate_demo
+      POSTGRES_USER: ridemate_demo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - demo_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ridemate_demo -d ridemate_demo"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [demo_private]
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: ridemate-demo-api:${RIDEMATE_REVISION:-local}
+    restart: unless-stopped
+    cpus: 1.0
+    mem_limit: 512m
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=ridemate_demo;Username=ridemate_demo;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      Jwt__Key: ${JWT_KEY:?Set JWT_KEY in deploy/.env}
+      Jwt__Issuer: RideMate
+      Jwt__Audience: RideMateApp
+      Jwt__ExpiresInMinutes: "120"
+      Database__Provider: PostgreSQL
+      Demo__Enabled: "true"
+      Demo__AllowPersistent: "true"
+      Demo__PublicApiUrl: ${PUBLIC_API_URL:?Set the phone-accessible PUBLIC_API_URL}
+      App__DevMode: "true"
+      Logging__LogLevel__Default: Information
+      Logging__LogLevel__Microsoft: Warning
+    ports:
+      - "127.0.0.1:${API_PORT:-8050}:8080"
+    networks: [demo_private]
+networks:
+  demo_private:
+volumes:
+  demo_database:

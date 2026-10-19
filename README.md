@@ -51,7 +51,7 @@ Adres API dla emulatora Androida: `http://10.0.2.2:5050` (alias do localhost hos
 2. Upewnij się, że iPhone i komputer są w **tej samej sieci Wi-Fi**.
 3. W katalogu `mobile/` uruchom: `npx expo start`
 4. Zeskanuj wyświetlony QR kod aparatem iPhona → otworzy się Expo Go z aplikacją RideMate.
-5. Jeśli zmieniałeś adres IP komputera, ustaw go w `mobile/app.json` w `extra.apiUrl` (np. `http://192.168.1.50:5050`).
+5. Jeśli zmieniałeś adres IP komputera, ustaw go w `mobile/app.json` w `extra.apiUrl` (np. `http://YOUR_COMPUTER_LAN_IP:5050`).
 
 > Uwaga: aplikacja korzysta z modułów natywnych (secure-store, notifications, reanimated, gesture-handler). Wszystkie są dostępne w Expo Go. Nie potrzebujesz Maca ani Xcode do testowania na iPhone.
 
@@ -94,3 +94,8 @@ Szczegóły: `mobile/MOBILE_BUILD.md`.
 - Object Storage (zdjęcia): ~2–5 EUR/m-c
 - Push (Expo/FCM): darmowy poziom początkowy
 - Razem: ok. **20–40 EUR/m-c**
+
+
+## Demo lokalne bez PostgreSQL
+
+Baza SQLite w pamięci i 20 kont ze zdjęciami: zobacz [DEMO.md](DEMO.md). Uruchom w PowerShell: `.\scripts\start-demo.ps1 -LanIp YOUR_COMPUTER_LAN_IP`. Główne konto: `demo01@ridemate.test`, hasło: `RideMate123!`. Dane resetują się po restarcie API. Tryb jest dostępny tylko w Development.

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import * as SecureStore from 'expo-secure-store';
+import { sessionStorage } from '../lib/storage';
 
 export interface AuthState {
   token: string | null;
@@ -15,11 +15,7 @@ export interface AuthState {
   setHydrated: () => void;
 }
 
-const secureStore = {
-  getItem: async (name: string) => await SecureStore.getItemAsync(name),
-  setItem: async (name: string, value: string) => await SecureStore.setItemAsync(name, value),
-  removeItem: async (name: string) => await SecureStore.deleteItemAsync(name),
-};
+const secureStore = sessionStorage;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -45,6 +41,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'ridemate-auth',
+      onRehydrateStorage: (state) => () => state.setHydrated(),
       storage: createJSONStorage(() => secureStore),
       partialize: (state) => ({
         token: state.token,

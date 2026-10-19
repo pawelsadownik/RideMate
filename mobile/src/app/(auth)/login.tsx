@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ImageBackground, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/design-system/useThemeColors';
@@ -12,6 +12,7 @@ export default function Login() {
   const { t } = useTranslation();
   const { setSession } = useAuthStore();
   const colors = useThemeColors();
+  const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,8 +37,30 @@ export default function Login() {
     }
   };
 
+  if (!showForm) return (
+    <ImageBackground source={require('../../../assets/welcome-road.png')} style={styles.welcome} resizeMode="cover">
+      <View style={styles.shade} />
+      <View style={styles.brand}>
+        <Text style={styles.brandMark}>⌁</Text>
+        <Text style={styles.brandTitle}>RideMate</Text>
+        <Text style={styles.brandTagline}>{i18n.language === 'en' ? 'People. Roads. More adventure.' : 'Ludzie. Drogi. Więcej przygód.'}</Text>
+      </View>
+      <View style={styles.welcomeActions}>
+        <Text style={styles.welcomeIntro}>{t('auth.welcomeSub')}</Text>
+        <TouchableOpacity accessibilityRole="button" style={styles.createButton} onPress={() => router.push('/(auth)/register')}>
+          <Text style={styles.buttonText}>{i18n.language === 'en' ? 'Create account' : 'Utwórz konto'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity accessibilityRole="button" style={styles.signInButton} onPress={() => setShowForm(true)}>
+          <Text style={styles.signInText}>{t('auth.signIn')}</Text>
+        </TouchableOpacity>
+        <Text style={styles.welcomeFootnote}>{i18n.language === 'en' ? 'For adults who share a passion for riding.' : 'Dla pełnoletnich osób, które łączy pasja do jazdy.'}</Text>
+      </View>
+    </ImageBackground>
+  );
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+      <TouchableOpacity accessibilityRole="button" onPress={() => setShowForm(false)}><Text style={{color: colors.accent, fontSize:16, marginBottom:24}}>‹ {i18n.language === "en" ? "Back" : "Wróć"}</Text></TouchableOpacity>
       <View style={styles.header}>
         <Text style={styles.title}>RideMate</Text>
         <Text style={styles.subtitle}>{t('auth.welcomeSub')}</Text>
@@ -81,7 +104,19 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center' },
+  container: { flex: 1, padding: 24, justifyContent: 'center', width: '100%', maxWidth: 480, alignSelf: 'center' },
+  welcome: { flex: 1, backgroundColor:'#111', width:'100%', maxWidth:520, alignSelf:'center' },
+  shade: { ...StyleSheet.absoluteFill, backgroundColor:'rgba(0,0,0,.25)' },
+  brand: { alignItems:'center', paddingTop:90, paddingHorizontal:20 },
+  brandMark: { fontSize:74, lineHeight:80, color:'#ff4965', fontWeight:'900' },
+  brandTitle: { color:'#fff', fontSize:48, fontWeight:'800', letterSpacing:-2 },
+  brandTagline: { color:'#fff', fontSize:16, marginTop:4 },
+  welcomeActions: { marginTop:'auto', padding:28, paddingTop:35, paddingBottom:40, backgroundColor:'rgba(0,0,0,.55)' },
+  welcomeIntro: { color:'#fff', textAlign:'center', fontSize:16, lineHeight:23, marginBottom:22 },
+  createButton: { backgroundColor:'#ff4564', borderRadius:28, paddingVertical:17, alignItems:'center' },
+  signInButton: { backgroundColor:'#fff', borderRadius:28, paddingVertical:17, alignItems:'center', marginTop:12 },
+  signInText: { color:'#17191c', fontSize:16, fontWeight:'700' },
+  welcomeFootnote: { color:'#ddd', textAlign:'center', fontSize:11, lineHeight:16, marginTop:22 },
   header: { alignItems: 'center', marginBottom: 40 },
   title: { fontSize: 36, fontWeight: '800' },
   subtitle: { fontSize: 16, color: '#6B6B73', marginTop: 6, textAlign: 'center' },

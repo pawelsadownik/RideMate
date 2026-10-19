@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Platform, ScrollView,
+  View, Text, StyleSheet, SafeAreaView, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Platform, ScrollView, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useQuery, useMutation, QueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {
   connect, disconnect, joinConversation, onMessage, offMessage, onConnectionStatus, getConnection,
@@ -30,6 +30,7 @@ export default function ChatThread() {
   const { t } = useTranslation();
   const { token } = useAuthStore();
   const styles = makeStyles(colors);
+  const queryClient = useQueryClient();
   const [inputText, setInputText] = useState('');
   const [connected, setConnected] = useState(false);
 
@@ -40,6 +41,7 @@ export default function ChatThread() {
       return res.data as MessageItem[];
     },
     enabled: !!conversationId,
+    refetchInterval: 5000,
   });
 
   const sendMutation = useMutation({
@@ -49,32 +51,17 @@ export default function ChatThread() {
     },
     onSuccess: () => {
       setInputText('');
+      void queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
     },
   });
 
   useEffect(() => {
-    (async () => {
-      if (token) {
-        await connect(token);
-        onConnectionStatus(setConnected);
-        await joinConversation(conversationId);
-      }
-    })();
-
-    const unsubMessage = () => {
-      onMessage((msg: any) => {
-        // sygnał o nowej wiadomości – odśwież listę
-        queryClientRef.current.invalidateQueries({ queryKey: ['messages', conversationId] });
-      });
-    };
-
-    return () => {
-      offMessage();
-      disconnect();
-    };
-  }, [token, conversationId]);
-
-  const queryClientRef = { current: new QueryClient() };
+    let active = true;
+    onConnectionStatus(value => { if (active) setConnected(value); });
+    onMessage(() => { void queryClient.invalidateQueries({ queryKey: ['messages', conversationId] }); });
+    if (token && conversationId) void connect(useAuthStore.getState().userId ?? '').then(() => joinConversation(conversationId)).catch(() => { if (active) setConnected(false); });
+    return () => { active = false; offMessage(); void disconnect(); };
+  }, [token, conversationId, queryClient]);
 
   const handleSend = () => {
     if (!inputText.trim()) return;
@@ -114,7 +101,7 @@ export default function ChatThread() {
         <Text style={styles.title}>{otherNickname}</Text>
         <View style={styles.spacer} />
         <Text style={[styles.status, { color: connected ? colors.success : colors.muted }]}>
-          {connected ? 'Połączono' : 'Łączenie...'}
+          {connected ? 'Połączono' : 'Odświeżanie co 5 s'}
         </Text>
       </View>
 

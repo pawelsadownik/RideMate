@@ -1,9 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { Platform } from 'react-native';
-import { Constants } from 'expo-constants';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../stores/authStore';
 
-const API_URL = (process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://10.0.2.2:5050').replace(/\/$/, '');
+export const API_URL = (process.env.EXPO_PUBLIC_API_URL || Constants.expoConfig?.extra?.apiUrl || 'http://10.0.2.2:5050').replace(/\/$/, '');
 
 export const api = axios.create({
   baseURL: API_URL,
