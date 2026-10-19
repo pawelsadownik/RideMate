@@ -1,6 +1,7 @@
+import { useRouter } from 'expo-router';
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform, Alert,
+  View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform, Alert, Modal, Image, ActivityIndicator,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -12,12 +13,14 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function Discover() {
+  const router = useRouter();
+  const [match, setMatch] = useState<{ id: string; nickname: string; photo?: string } | null>(null);
+  const [openingChat, setOpeningChat] = useState(false);
   const colors = useThemeColors();
   const { t } = useTranslation();
   const { isPremium } = useAuthStore();
   const styles = makeStyles(colors);
 
-  const [profiles, setProfiles] = useState<any[]>([]);
   const [index, setIndex] = useState(0);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [filters, setFilters] = useState({
@@ -46,30 +49,22 @@ export default function Discover() {
         .join('&');
 
       const res = await api.get(`/api/discovery?${queryString}`);
-      return res.data as any[];
+      return res.data.map((p: any) => ({ ...p, photos: (p.photoUrls ?? []).map((url: string, i: number) => ({ url, isPrimary: i === 0 })) })) as any[];
     },
     enabled: true,
     retry: 1,
     refetchOnWindowFocus: false,
   });
 
-  useEffect(() => {
-    if (data) {
-      setProfiles(data);
-      setIndex(0);
-    }
-  }, [data]);
+  const profiles = data ?? [];
 
-  const currentProfile = profiles[index];
+  const currentProfile = profiles[index] ?? (match ? profiles[index - 1] : undefined);
 
   const handleLike = useCallback(async (id: string) => {
     try {
       const res = await api.post('/api/discovery/like', { toUserId: id, like: true });
       if (res.data.isMatch) {
-        Alert.alert(t('discover.match'), t('discover.matchSub', { name: currentProfile?.nickname }), [
-          { text: t('discover.startChat'), onPress: () => { /* TODO: navigate to chat */ } },
-          { text: t('discover.keepSwiping'), style: 'cancel' },
-        ]);
+        setMatch({ id: res.data.matchId, nickname: currentProfile.nickname, photo: currentProfile.primaryPhotoUrl });
       }
       setIndex((i) => i + 1);
     } catch (e: any) {
@@ -79,16 +74,31 @@ export default function Discover() {
         Alert.alert(t('common.error'), t('common.unknownError'));
       }
     }
-  }, [currentProfile?.nickname, index]);
+  }, [currentProfile, t]);
 
   const handlePass = useCallback(async (id: string) => {
     try {
       await api.post('/api/discovery/like', { toUserId: id, like: false });
       setIndex((i) => i + 1);
     } catch {
-      setIndex((i) => i + 1);
+      Alert.alert(t('common.error'), t('common.networkError'));
     }
   }, []);
+
+  const startChat = async () => {
+    if (!match || openingChat) return;
+    setOpeningChat(true);
+    try {
+      const response = await api.get('/api/chat/conversations');
+      const conversation = response.data.find((c: { matchId: string }) => c.matchId === match.id);
+      if (!conversation) throw new Error('Conversation unavailable');
+      setMatch(null);
+      router.push({ pathname: '/chat/[conversationId]', params: { conversationId: conversation.id, otherNickname: match.nickname } });
+    } catch { Alert.alert(t('common.error'), t('common.networkError')); }
+    finally { setOpeningChat(false); }
+  };
+
+  if (error) return <SafeAreaView style={styles.container}><Text style={styles.title}>RideMate</Text><Text>{t('common.networkError')}</Text><TouchableOpacity onPress={() => void refetch()} style={styles.filterBtn}><Text>{t('common.retry', { defaultValue: 'Spróbuj ponownie' })}</Text></TouchableOpacity></SafeAreaView>;
 
   if (isLoading) {
     return (
@@ -115,16 +125,23 @@ export default function Discover() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Modal visible={!!match} transparent animationType="fade" onRequestClose={() => setMatch(null)}>
+        <View style={{flex:1,backgroundColor:'rgba(12,13,16,.96)',justifyContent:'center',alignItems:'center',padding:28}}>
+          <Text style={{fontSize:34,color:'#fff',fontWeight:'800',textAlign:'center'}}>{t('discover.match')}</Text>
+          <Text style={{color:'#ddd',fontSize:16,textAlign:'center',marginTop:16}}>{t('discover.matchSub', {name:match?.nickname})}</Text>
+          {!!match?.photo && <Image source={{uri:match.photo}} style={{width:150,height:150,borderRadius:75,marginVertical:30,borderWidth:3,borderColor:'#fff'}} />}
+          <Text style={{fontSize:50,color:'#ff4564',marginVertical:20}}>♥</Text>
+          <TouchableOpacity onPress={() => void startChat()} disabled={openingChat} style={{backgroundColor:'#ff4564',padding:18,borderRadius:28,width:'100%',alignItems:'center'}}><Text style={{color:'#fff',fontWeight:'700'}}>{t('discover.startChat')}</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => setMatch(null)} style={{padding:18,marginTop:12}}><Text style={{color:'#fff'}}>{t('discover.keepSwiping')}</Text></TouchableOpacity>
+        </View>
+      </Modal>
       <View style={styles.header}>
         <Text style={styles.title}>{t('discover.title')}</Text>
-        {!isPremium && (
-          <View style={[styles.limitBadge, { backgroundColor: '#FEE2E2' }]}>
-            <Text style={[styles.limitText, { color: '#EF4444' }]}>{t('discover.dailyLimitReached')}</Text>
-          </View>
-        )}
+
       </View>
 
       <SwipeCard
+        key={currentProfile.id}
         profile={currentProfile}
         onLike={handleLike}
         onPass={handlePass}
@@ -147,13 +164,13 @@ export default function Discover() {
       </TouchableOpacity>
 
       <View style={styles.filtersRow}>
-        <TouchableOpacity style={[styles.filterChip, { backgroundColor: '#F5F6F8' }]} onPress={() => {}}>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: '#F5F6F8' }]} onPress={() => { setIndex(0); setFilters({ ...filters, activityType: filters.activityType === 'Motorcycle' ? '' : 'Motorcycle' }); }}>
           <Text style={styles.filterChipText}>🏍️ {t('profile.motorcycle')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterChip, { backgroundColor: '#F5F6F8' }]} onPress={() => {}}>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: '#F5F6F8' }]} onPress={() => { setIndex(0); setFilters({ ...filters, activityType: filters.activityType === 'Bicycle' ? '' : 'Bicycle' }); }}>
           <Text style={styles.filterChipText}>🚲 {t('profile.bicycle')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterChip, { backgroundColor: '#F5F6F8' }]} onPress={() => {}}>
+        <TouchableOpacity style={[styles.filterChip, { backgroundColor: '#F5F6F8' }]} onPress={() => { setIndex(0); setFilters({ ...filters, maxDistanceKm: filters.maxDistanceKm === 50 ? 100 : 50 }); }}>
           <Text style={styles.filterChipText}>⚙️ {t('discover.filters')}</Text>
         </TouchableOpacity>
       </View>

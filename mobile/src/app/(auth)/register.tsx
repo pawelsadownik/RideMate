@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/design-system/useThemeColors';
 import i18n from '@/lib/i18n';
 import { useTranslation } from 'react-i18next';
+import { parseAdultDate } from '@/lib/dateOfBirth';
 import { api } from '@/lib/api';
 
 export default function Register() {
@@ -15,12 +16,14 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [dob, setDob] = useState<Date | null>(null);
+  const [dobText, setDobText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleRegister = async () => {
     setError(null);
+    const dob = parseAdultDate(dobText);
+    if (!dob) { setError('Podaj prawidłową datę urodzenia RRRR-MM-DD. Wymagany wiek: 18+.'); return; }
     if (!email || !password || !dob) {
       setError('Wypełnij wszystkie pola.');
       return;
@@ -58,6 +61,7 @@ export default function Register() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingVertical: 32 }} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Text style={styles.title}>RideMate</Text>
         <Text style={styles.subtitle}>{t('auth.welcome')}</Text>
@@ -93,14 +97,7 @@ export default function Register() {
         />
 
         <Text style={styles.label}>{t('auth.dateOfBirth')}</Text>
-        <View style={styles.input}>
-          <Text style={styles.inputValue}>{
-            dob ? dob.toLocaleDateString(undefined, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
-          }</Text>
-        </View>
-        <TouchableOpacity style={styles.input} onPress={() => {}} disabled>
-          <Text style={styles.inputValue}>{t('auth.dateOfBirth')} (wybierz datę)</Text>
-        </TouchableOpacity>
+        <TextInput style={styles.input} accessibilityLabel={t('auth.dateOfBirth')} placeholder="RRRR-MM-DD" value={dobText} onChangeText={setDobText} keyboardType="numbers-and-punctuation" maxLength={10} />
 
         {error && <Text style={styles.error}>{error}</Text>}
 
@@ -115,12 +112,13 @@ export default function Register() {
           <Text style={styles.linkText}>{t('auth.signIn')}</Text>
         </TouchableOpacity>
       </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: 'center' },
+  container: { flex: 1, paddingHorizontal: 24, width: '100%', maxWidth:480, alignSelf:'center' },
   header: { alignItems: 'center', marginBottom: 40 },
   title: { fontSize: 36, fontWeight: '800' },
   subtitle: { fontSize: 16, color: '#6B6B73', marginTop: 6, textAlign: 'center' },

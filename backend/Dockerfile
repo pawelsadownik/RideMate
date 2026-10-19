@@ -10,13 +10,13 @@ COPY ["src/RideMate.Domain/RideMate.Domain.csproj", "src/RideMate.Domain/"]
 COPY ["src/RideMate.Application/RideMate.Application.csproj", "src/RideMate.Application/"]
 COPY ["src/RideMate.Infrastructure/RideMate.Infrastructure.csproj", "src/RideMate.Infrastructure/"]
 COPY ["src/RideMate.Api/RideMate.Api.csproj", "src/RideMate.Api/"]
-RUN dotnet restore "RideMate.sln"
+RUN dotnet restore "src/RideMate.Api/RideMate.Api.csproj"
 COPY . .
 WORKDIR "/src/src/RideMate.Api"
-RUN dotnet build "RideMate.Api.csproj" -c Release -o /app/build
+RUN dotnet build "RideMate.Api.csproj" -c Release -o /app/build -m:1 /p:UseSharedCompilation=false
 
 FROM build AS publish
-RUN dotnet publish "RideMate.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "RideMate.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false -m:1 /p:UseSharedCompilation=false
 
 FROM base AS final
 WORKDIR /app

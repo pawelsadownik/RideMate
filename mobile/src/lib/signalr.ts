@@ -1,8 +1,8 @@
 import { HubConnectionBuilder, HubConnection, LogLevel } from '@microsoft/signalr';
-import * as SecureStore from 'expo-secure-store';
+import { useAuthStore } from '../stores/authStore';
+import { API_URL } from './api';
 import { Platform } from 'react-native';
 
-const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:5050').replace(/\/$/, '');
 
 let connection: HubConnection | null = null;
 let currentUserId: string | null = null;
@@ -11,7 +11,7 @@ let onMessageReceived: ((message: any) => void) | null = null;
 let onConnectionChange: ((connected: boolean) => void) | null = null;
 
 export async function getToken(): Promise<string | null> {
-  return await SecureStore.getItemAsync('ridemate-auth-token');
+  return useAuthStore.getState().token;
 }
 
 export async function connect(userId: string): Promise<void> {
@@ -20,9 +20,7 @@ export async function connect(userId: string): Promise<void> {
   const token = await getToken();
   connection = new HubConnectionBuilder()
     .withUrl(`${API_URL}/chatHub`, {
-      accessTokenFactory: () => token ?? '',
-      skipNegotiation: true,
-      transport: Platform.OS === 'web' ? undefined : 1, // WebSockets
+      accessTokenFactory: () => useAuthStore.getState().token ?? '',
     })
     .withAutomaticReconnect()
     .configureLogging(LogLevel.Warning)
@@ -40,8 +38,9 @@ export async function connect(userId: string): Promise<void> {
     onConnectionChange?.(false);
   });
 
-  await connection.start();
-  await connection.invoke('JoinGroup', `user:${userId}`);
+  try { await connection.start(); } catch (error) { connection = null; throw error; }
+  if (onMessageReceived) connection.on('ReceiveMessage', onMessageReceived);
+  onConnectionChange?.(true);
   currentUserId = userId;
 }
 
@@ -49,7 +48,7 @@ export async function disconnect(): Promise<void> {
   if (!connection) return;
   try {
     if (currentConversationId) {
-      await connection.invoke('LeaveGroup', `conversation:${currentConversationId}`);
+      await connection.invoke('LeaveConversation', currentConversationId);
     }
     await connection.stop();
   } catch {
@@ -65,9 +64,9 @@ export async function disconnect(): Promise<void> {
 export async function joinConversation(conversationId: string): Promise<void> {
   if (!connection) return;
   if (currentConversationId) {
-    await connection.invoke('LeaveGroup', `conversation:${currentConversationId}`);
+    await connection.invoke('LeaveConversation', currentConversationId);
   }
-  await connection.invoke('JoinGroup', `conversation:${conversationId}`);
+  await connection.invoke('JoinConversation', conversationId);
   currentConversationId = conversationId;
 }
 

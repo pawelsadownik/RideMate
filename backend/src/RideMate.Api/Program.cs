@@ -1,3 +1,5 @@
+using Microsoft.Data.Sqlite;
+using RideMate.Api.Development;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using RideMate.Application.Interfaces;
@@ -15,9 +17,34 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnC
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
 
-// DbContext
-builder.Services.AddDbContext<RideMateDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// The in-memory database is an explicit, development-only opt-in.
+var inMemory = string.Equals(builder.Configuration["Database:Provider"], "InMemory", StringComparison.OrdinalIgnoreCase);
+var demoEnabled = builder.Configuration.GetValue<bool>("Demo:Enabled");
+if ((inMemory || demoEnabled) && !builder.Environment.IsDevelopment())
+    throw new InvalidOperationException("InMemory and demo accounts are available only in Development.");
+if (demoEnabled && !inMemory)
+{
+    var demoDatabase = new Npgsql.NpgsqlConnectionStringBuilder(builder.Configuration.GetConnectionString("DefaultConnection")).Database;
+    if (!builder.Configuration.GetValue<bool>("Demo:AllowPersistent") || demoDatabase != "ridemate_demo")
+        throw new InvalidOperationException("Persistent demo seeding requires Demo:AllowPersistent=true and the dedicated ridemate_demo database.");
+}
+if (inMemory)
+{
+    var memoryConnection = $"Data Source=ridemate-{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+    builder.Services.AddSingleton<SqliteConnection>(_ => { var keeper = new SqliteConnection(memoryConnection); keeper.Open(); return keeper; });
+    builder.Services.AddDbContext<RideMateDbContext>((services, options) => {
+        _ = services.GetRequiredService<SqliteConnection>(); // Keep the database alive until the host is disposed.
+        options.UseSqlite(memoryConnection);
+    });
+}
+else
+    builder.Services.AddDbContext<RideMateDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+if (builder.Configuration["urls"] is null) builder.WebHost.UseUrls("http://0.0.0.0:5050");
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddCors(options => options.AddPolicy("LocalPreview", policy => policy
+        .WithOrigins("http://localhost:8082", "http://127.0.0.1:8082", "http://localhost:8081", "http://127.0.0.1:8081")
+        .AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 // JWT
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key nie jest ustawiony.");
@@ -88,11 +115,15 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<RideMateDbContext>();
     // W środowisku developerskim tworzymy bazę automatycznie (brak migracji na etapie 1).
     db.Database.EnsureCreated();
+    if (demoEnabled) await DemoSeeder.SeedAsync(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher>(), builder.Configuration);
 }
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment()) app.UseCors("LocalPreview");
+if (demoEnabled) app.UseStaticFiles();
+if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/health", async (RideMateDbContext db) => await db.Database.CanConnectAsync() ? Results.Ok(new { status = "healthy" }) : Results.StatusCode(503));
 app.MapHub<ChatHub>("/chatHub");
-app.Run("http://0.0.0.0:5050");
+app.Run();
