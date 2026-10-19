@@ -38,5 +38,10 @@ Seedowanie PostgreSQL wymaga trzech jawnych ustawień: środowiska Development, 
 
 Zdjęcia i wiek testowych profili dobrano wizualnie; imiona i wiek są fikcyjnymi danymi demonstracyjnymi, a nie danymi osób na zdjęciach. Źródła zapisano w backend/src/RideMate.Api/wwwroot/demo/profiles.json. To nadal środowisko testowe ze znanymi danymi logowania; nie publikować go w Internecie jako produkcji.
 
-Stan połączenia podczas przygotowania: MacBook odpowiada przez SSH, lecz logowanie bez interakcji zostało odrzucone z braku dostępnego klucza/agenta. Nie wykonano jeszcze żadnych zmian na Ubuntu ani w Atlasie.
+## Wdrożenie zweryfikowane 19.10.2026
 
+Backend i PostgreSQL uruchomiono z commita d4104b21f8ed94edc912fe3fa15745c70c045d61 w osobnym projekcie ridemate-demo. Testy po wdrożeniu potwierdziły healthy API, login, 20 kont demo, 18 profili do odkrycia, jedną konwersację i zdjęcie serwowane lokalnie. Kontenery Atlasa zachowały identyczne ID, stan running i czasy uruchomienia.
+
+Kod aplikacji, Compose i skrypt wdrożenia należą do repozytorium RideMate. W repozytorium Atlasa jest jedynie ręcznie wywoływany workflow pobierający dokładny commit RideMate na współdzielonym runnerze Ubuntu. Kontenery, obrazy, sieć, wolumen, sekrety i katalog runtime są oddzielne. Aby przenieść RideMate na inny host, należy zmienić dostęp do runnera i kontrolę sąsiednich kontenerów w skrypcie wdrożenia; kod aplikacji i baza nie zależą od schematu ani API Atlasa.
+
+Po otwarciu osobnego tunelu SSH w drugim terminalu można uruchomić .\scripts\start-remote-mobile.ps1 -LanIp YOUR_COMPUTER_LAN_IP. Najpierw zakończ poprzedni serwer Expo na porcie 8082 (Ctrl+C). Skrypt sprawdza dostępność zdalnego API przez tunel przed zmianą adresu klienta. Hasła SSH wpisuje się wyłącznie w terminalu. Na fizycznym iPhonie nie wykonano jeszcze testu.
